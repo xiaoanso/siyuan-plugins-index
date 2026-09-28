@@ -11,12 +11,18 @@ export interface ReverseBuildItem {
 
 /**
  * 为 Database/Builder 专用的格式化渲染
- * 严格按照 Builder 引擎解析标准：[icon](siyuan://blocks/id) ➖ text
+ * Builder 引擎解析标准：
+ * - 子文档： [icon](siyuan://blocks/id) text （图标作为跳转链接，正文为纯文本）
+ * - 标题行： [text](siyuan://blocks/id)       （正文文字本身作为跳转链接，无 ➖ 分隔符）
  */
 export function generateBuilderListItem(item: ReverseBuildItem, indent: string = "", isOrdered: boolean = false): string {
     const marker = isOrdered ? "1. " : "* ";
     const icon = item.icon || "📄";
-    return `${indent}${marker}[${icon}](siyuan://blocks/${item.id}) ➖ ${item.text}`;
+    if (icon === "➖") {
+        // 标题行：正文文字本身作为跳转链接，移除 ➖ 小竖线分隔符
+        return `${indent}${marker}[${item.text}](siyuan://blocks/${item.id})`;
+    }
+    return `${indent}${marker}[${icon}](siyuan://blocks/${item.id}) ${item.text}`;
 }
 
 /**
@@ -96,7 +102,7 @@ export async function buildOutlineTreeMarkdown(
             indent += '    ';
         }
 
-        // 强行使用 ➖ 图标保证 Builder 提取时的统一性
+        // 标题行：正文文字本身作为跳转链接（generateBuilderListItem 内部处理 ➖ 为无分隔符格式）
         md += generateBuilderListItem({ id, text: name || pureTextContent, icon: "➖" }, indent, isOrdered) + "\n";
 
         const subOutlineCount = outline.count;

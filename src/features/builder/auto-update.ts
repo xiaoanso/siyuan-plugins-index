@@ -1,5 +1,5 @@
 import { client } from "../../shared/api-client";
-import { ListProcessor } from "./builder";
+import { ListProcessor, runWithBuildLock } from "./builder";
 
 export async function autoUpdateBuilder(parentId: string, existingBlock?: any) {
     let block = existingBlock;
@@ -43,7 +43,7 @@ export async function autoUpdateBuilder(parentId: string, existingBlock?: any) {
                 localAutoUpdate = data.builderAutoUpdate;
             } catch (je) {
                 // Second attempt: old raw string format
-                if (val === "doc-tree" || val === "heading-tree" || val === "composite-tree") {
+                if (val === "doc-tree" || val === "heading-tree") {
                     treeType = val;
                 } else {
                     console.warn(`[Builder] Failed to parse JSON or fallback: ${val}`);
@@ -71,26 +71,22 @@ export async function autoUpdateBuilder(parentId: string, existingBlock?: any) {
     let actionType = "";
     if (treeType === "doc-tree") actionType = "PUSH_TO_DOC";
     else if (treeType === "heading-tree") actionType = "PUSH_TO_BOTTOM";
-    else if (treeType === "composite-tree") actionType = "PUSH_COMBINED";
     else {
         // console.warn(`[Builder] Unknown treeType: ${treeType}`);
         return;
     }
 
     try {
-        const processor = new ListProcessor();
-        let typeStr = "NodeList";
-        if (block.type === 'i') typeStr = "NodeListItem";
+        // 以列表块为粒度加锁，串行化同一列表的自动更新，避免与手动构建并发重复创建
+        await runWithBuildLock(block.id, async () => {
+            const processor = new ListProcessor();
+            let typeStr = "NodeList";
+            if (block.type === 'i') typeStr = "NodeListItem";
 
-        if (treeType === "composite-tree") {
-            // Two-pass update to ensure stable indexing with a minimal delay
-            await processor.processRecursive(block.id, typeStr, "PUSH_TO_BOTTOM");
-            await new Promise(resolve => setTimeout(resolve, 100)); // 0.1s delay
-            await processor.processRecursive(block.id, typeStr, "PUSH_TO_DOC");
-        } else {
+            // 先清理残留的构建器目标（删除列表项后自动回收其对应文档/标题）
+            await processor.ibp.cleanupOrphans(block.id);
             await processor.processRecursive(block.id, typeStr, actionType);
-        }
-
+        });
     } catch (e) {
         console.error("[Builder] Auto-update failed", e);
     }

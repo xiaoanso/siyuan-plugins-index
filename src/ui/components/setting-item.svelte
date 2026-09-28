@@ -10,10 +10,12 @@
     export let disabled = null;
 
     function updateSetting() {
-        settings.set(settingKey, settingValue);
+        const value = type === "range" ? Number(settingValue) : settingValue;
+        if (type === "range") settingValue = value;
+        settings.set(settingKey, value);
         settings.save();
         window.dispatchEvent(new CustomEvent("index-plugin-setting-changed", {
-            detail: { key: settingKey, value: settingValue }
+            detail: { key: settingKey, value }
         }));
     }
 
@@ -22,6 +24,7 @@
         : Object.entries(content.options || {}).map(([key, text]) => ({ value: key, label: String(text) }));
 
     $: selectedLabel = dropdownOptions.find(opt => opt.value === String(settingValue))?.label || settingValue;
+    $: rangeDisplay = type === "range" ? Number(settingValue) : settingValue;
 </script>
 
 <label class="fn__flex b3-label config__item">
@@ -33,10 +36,11 @@
     </div>
     <span class="fn__space" />
     {#if type === "range"}
-        <div
-            class="b3-tooltips b3-tooltips__n fn__flex-center"
-            aria-label={settingValue}
-        >
+        <div class="fn__flex fn__flex-center" style="gap: 10px; min-width: 220px;">
+            <span
+                class="indexos-range-value"
+                style="min-width: 28px; text-align: center; font-variant-numeric: tabular-nums; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 13px; font-weight: 600; color: var(--indexos-accent-primary, var(--b3-theme-primary));"
+            >{rangeDisplay}</span>
             <input
                 class="b3-slider fn__size200"
                 id={settingKey}
@@ -45,6 +49,7 @@
                 max={content.max}
                 step={content.step}
                 bind:value={settingValue}
+                on:input={() => { settingValue = Number(settingValue); }}
                 on:change={updateSetting}
             />
         </div>

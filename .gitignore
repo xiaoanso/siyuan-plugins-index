@@ -4,6 +4,8 @@
 pnpm-lock.yaml
 package.zip
 node_modules
-dev
 dist
 build
+.env
+.env.local
+.env.*.local

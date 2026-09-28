@@ -24,12 +24,13 @@
     
     <div style="flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding-right: 4px;">
         {#each filteredCommands as cmd}
-            <div 
+            <button
+                type="button"
                 class="b3-list-item" 
-                style="padding: 8px 10px; border-radius: 4px; cursor: pointer; display: flex; flex-direction: column; gap: 2px; transition: background-color 0.15s ease;"
+                style="padding: 8px 10px; border-radius: 4px; cursor: pointer; display: flex; flex-direction: column; gap: 2px; transition: background-color 0.15s ease; width: 100%; text-align: left; border: none; background: transparent;"
                 on:click={() => onSelect(cmd)}
             >
-                <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                     <span style="font-weight: bold; color: var(--b3-theme-on-background); font-size: 13px;">
                         {cmd.name}
                     </span>
@@ -42,7 +43,7 @@
                         {cmd.description}
                     </div>
                 {/if}
-            </div>
+            </button>
         {/each}
         {#if filteredCommands.length === 0}
             <div style="text-align: center; color: var(--b3-theme-on-surface-light); font-size: 12px; margin-top: 20px;">

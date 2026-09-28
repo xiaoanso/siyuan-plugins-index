@@ -2,6 +2,7 @@
   "insertIndex": "Insert Index",
   "insertoutline": "Insert Outline",
   "openSqliteStatus": "Database & Command Palette",
+  "initSystemDB": "Instantiate",
   "settings": "Settings",
   "addTopBarIcon": "Insert Index",
   "indexSettings": "Index",
@@ -32,6 +33,14 @@
         "content": "Select a notebook to generate index",
         "dialogtitle": "Generate Notebook Index",
         "insert": "Insert"
+      },
+      "layoutType": {
+        "title": "Layout",
+        "content": "Overall layout for the generated index",
+        "options": {
+          "list": "List",
+          "superblock-card": "Superblock Card"
+        }
       },
       "listType": {
         "title": "List Type",
@@ -67,13 +76,6 @@
         "content": "Default fold level depth",
         "min": 0,
         "max": 10,
-        "step": 1
-      },
-      "col": {
-        "title": "Columns",
-        "content": "Number of columns for index display",
-        "min": 1,
-        "max": 5,
         "step": 1
       },
 
@@ -120,16 +122,53 @@
         "content": "Enable command registry management and database diagnostic tools (not recommended for general users)"
       },
 
-      "builderDesc": "📄 Open sub-page · ➖ Link to heading"
+      "builderDesc": "📄 Icon opens sub-doc · Title text links to heading"
     }
   },
   "builderMenu": {
     "buildDoc": "👈 Build Subdocs",
     "buildHeading": "👇 Build Heading Rows",
+    "buildTooltip": "Sync list items to independent docs or headings",
+    "helpTitle": "Builder Help",
+    "helpStep1": "1. Create a List Block",
+    "helpStep1Desc": "Create a list block in SiYuan Note",
+    "helpStep2": "2. Select the List",
+    "helpStep2Desc": "Make sure it's a top-level list (not embedded)",
+    "helpStep3": "3. Right-Click Menu",
+    "helpStep3Desc": "Right-click → Choose Build Subdocs or Build Heading Rows",
+    "helpStep4": "4. Auto-Update (Optional)",
+    "helpStep4Desc": "Add custom-tree-create attribute to enable auto-sync",
+    "helpListExample": "5. Example: Create a List Block:",
+    "helpListExampleContent": "- Chapter 1\n　- Section 1.1\n　- Section 1.2\n- Chapter 2\n　- Section 2.1",
+    "helpNote": "Tip: Use with Attribute View to auto-inherit icons, covers, and templates",
     "syncSuccess": "✅ Sync Complete",
     "syncPartial": "⚠️ Some items not updated due to complex format (x{n}), only icons updated",
     "syncError": "Sync Failed: {error}",
     "transformFail": "Transformation Failed"
+  },
+  "indexMenu": {
+    "helpTitle": "Index Help",
+    "helpStep1": "1. Open a Document",
+    "helpStep1Desc": "Open the top-level document where you want to generate the index",
+    "helpStep2": "2. Trigger Generation",
+    "helpStep2Desc": "Click the 「Insert Index」 topbar button, type /insert index, or press ⌥⌘I",
+    "helpStep3": "3. Done",
+    "helpStep3Desc": "Automatically scans sub-documents and generates an index list",
+    "helpStep4": "4. Auto-Update (Optional)",
+    "helpStep4Desc": "Add custom-index-create attribute to the index block to enable auto-sync",
+    "helpNote": "Tip: Configure layout, list type, link type, icons, depth, etc. in Settings"
+  },
+  "outlineMenu": {
+    "helpTitle": "Outline Help",
+    "helpStep1": "1. Open a Document",
+    "helpStep1Desc": "Open the document where you want to generate the outline",
+    "helpStep2": "2. Trigger Generation",
+    "helpStep2Desc": "Right-click the topbar menu → Insert Outline, type /insert outline, or press ⌥⌘O",
+    "helpStep3": "3. Done",
+    "helpStep3Desc": "Automatically scans headings in the document and generates an outline list",
+    "helpStep4": "4. Auto-Update (Optional)",
+    "helpStep4Desc": "Add custom-outline-create attribute to the outline block to enable auto-sync",
+    "helpNote": "Tip: Configure list type, link type, rich text sync, etc. in Settings"
   },
   "dbConfig": {
     "dialogTitle": "Database Settings",

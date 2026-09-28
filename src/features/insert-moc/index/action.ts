@@ -38,7 +38,7 @@ export async function insertAction(targetBlockId?: string) {
         if (localSettings.useDynamicAnchor === true && localSettings.linkType !== "dynamic-ref") localSettings.linkType = "dynamic-ref";
         delete localSettings.useDynamicAnchor;
 
-        const keysToCheck = ["depth", "listType", "linkType", "fold", "col", "icon"];
+        const keysToCheck = ["depth", "listType", "linkType", "layoutType", "fold", "icon"];
         let mismatch = false;
         for (const key of keysToCheck) {
             if (localSettings[key] !== settings.get(key)) {

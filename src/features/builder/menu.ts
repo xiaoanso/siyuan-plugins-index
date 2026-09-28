@@ -1,5 +1,5 @@
 import { client } from "../../shared/api-client";
-import { ListProcessor } from "./builder";
+import { ListProcessor, runWithBuildLock } from "./builder";
 
 import { getOutermostList } from "../../shared/utils/dom-utils";
 import { confirmTransformation } from "../../shared/utils/transformation-utils";
@@ -43,6 +43,7 @@ export function buildDoc({ detail }: any) {
         label: i18n.builderMenu.buildHeading,
         click: () => syncManager(blockId, blockType, "PUSH_TO_BOTTOM")
     });
+
 }
 
 async function syncManager(sourceBlockId: string, sourceType: string, actionType: string) {
@@ -73,11 +74,14 @@ async function syncManager(sourceBlockId: string, sourceType: string, actionType
         try {
             // Need robust decoding here too? Usually getBlockAttrs returns decoded JSON if it's stored as such? 
             // Or string. "custom-tree-create" is a string containing JSON.
-            // Siyuan returns it as string. It might have &quot;.
+            // Siyuan returns it as string. It might have ".
             // Let's use simple parse for now, assuming standard behavior, or the same robust method if needed.
             // But menu.ts runs in browser context too? Yes.
             let val = treeAttr;
-            if (val.includes("&quot;")) val = val.replace(/&quot;/g, '"');
+            // SiYuan 可能返回 HTML 实体编码的引号（"），先做归一化再解析
+            if (val.includes('\\"')) {
+                val = val.replace(/\\"/g, '"');
+            }
             currentData = JSON.parse(val);
         } catch (e) {
             console.error("Failed to parse custom-tree-create", e);
@@ -86,13 +90,11 @@ async function syncManager(sourceBlockId: string, sourceType: string, actionType
 
     let currentType = currentData.treeType;
 
+    // 只设置单一构建类型，不再升级为组合模式
     let newType = currentType;
     if (!currentType) {
         if (actionType === "PUSH_TO_DOC") newType = "doc-tree";
         else if (actionType === "PUSH_TO_BOTTOM") newType = "heading-tree";
-    } else {
-        if (currentType === "doc-tree" && actionType === "PUSH_TO_BOTTOM") newType = "composite-tree";
-        else if (currentType === "heading-tree" && actionType === "PUSH_TO_DOC") newType = "composite-tree";
     }
 
     if (newType && newType !== currentType) {
@@ -107,22 +109,27 @@ async function syncManager(sourceBlockId: string, sourceType: string, actionType
     }
 
     try {
-        const processor = new ListProcessor();
-        await processor.processRecursive(sourceBlockId, sourceType, actionType);
+        // 以列表块为粒度加锁，串行化同一列表的构建，防止并发重复创建子文档
+        await runWithBuildLock(sourceBlockId, async () => {
+            const processor = new ListProcessor();
+            // 先清理残留的构建器目标（删除列表项后自动回收其对应文档/标题）
+            await processor.ibp.cleanupOrphans(sourceBlockId);
+            await processor.processRecursive(sourceBlockId, sourceType, actionType);
 
-        if (processor.ibp.errors.length > 0) { // Access via ibp
-            // @ts-ignore
-            client.pushMsg({
-                msg: i18n.builderMenu.syncPartial.replace("{n}", processor.ibp.errors.length.toString()),
-                timeout: 5000
-            });
-        } else {
-            // @ts-ignore
-            client.pushMsg({
-                msg: i18n.builderMenu.syncSuccess,
-                timeout: 3000
-            });
-        }
+            if (processor.ibp.errors.length > 0) { // Access via ibp
+                // @ts-ignore
+                client.pushMsg({
+                    msg: i18n.builderMenu.syncPartial.replace("{n}", processor.ibp.errors.length.toString()),
+                    timeout: 5000
+                });
+            } else {
+                // @ts-ignore
+                client.pushMsg({
+                    msg: i18n.builderMenu.syncSuccess,
+                    timeout: 3000
+                });
+            }
+        });
     } catch (e) {
         console.error(e);
         // @ts-ignore

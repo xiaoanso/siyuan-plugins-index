@@ -5,6 +5,7 @@ import "./ui/styles/index.css";
 import { createDialog, initTopbar } from "./ui/topbar";
 import { settings, CONFIG } from "./core/settings";
 import { buildDoc as buildDocNew } from "./features/builder/menu";
+import { initBuilderWatch } from "./features/builder/watch";
 import { addDataMenuItems } from "./features/av/list/menu";
 import { addAVMenuItems, avEventHandler } from "./features/av/attribute-view/events";
 import { updateIndex, execAutoUpdate } from "./events/protyle-event";
@@ -41,6 +42,7 @@ export default class IndexPlugin extends Plugin {
     private switchHandler: any;
     private lastActiveDoc: { rootId: string, notebookId: string, path: string } | null = null;
     private openUrlPluginHandler?: (event: any) => void;
+    private destroyBuilderWatch?: () => void;
 
     //加载插件
     async onload() {
@@ -104,6 +106,9 @@ export default class IndexPlugin extends Plugin {
             this.eventBus.on("click-editortitleicon", addEditorTitleIconMenuItems);
         }
         this.eventBus.on("open-menu-av", addAVMenuItems);
+        // 构造器实时监听：删除托管子文档时实时清理悬空引用
+        this.destroyBuilderWatch = initBuilderWatch(this);
+
         //监听文档载入事件
         this.eventBus.on("loaded-protyle-static", updateIndex);
         this.eventBus.on("loaded-protyle-static", (event: any) => {
@@ -207,6 +212,10 @@ export default class IndexPlugin extends Plugin {
         this.eventBus.off("open-menu-av", addAVMenuItems);
         this.eventBus.off("loaded-protyle-static", updateIndex);
         this.eventBus.off("switch-protyle", this.switchHandler);
+        if (this.destroyBuilderWatch) {
+            this.destroyBuilderWatch();
+            this.destroyBuilderWatch = undefined;
+        }
         if (isDevInitSysEnabled()) {
             this.eventBus.off("ws-main", handleTopBarEvents);
         }

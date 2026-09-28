@@ -172,19 +172,146 @@
 .indexos-dialog .layout-tab-bar,
 .indexos-dialog .config__tab,
 .indexos-management-panel .layout-tab-bar {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    justify-content: space-around !important;
+    align-items: stretch !important;
     background: var(--indexos-bg-base) !important;
     border-bottom: 1px solid var(--indexos-border-light) !important;
+    overflow: visible !important;
 }
 
 .indexos-dialog .layout-tab-bar .item,
 .indexos-dialog .config__tab .item,
 .indexos-management-panel .layout-tab-bar .item {
+    flex: 1 1 0% !important;
+    width: 25% !important;
+    max-width: 25% !important;
+    min-width: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    white-space: nowrap !important;
     background: transparent !important;
     color: var(--indexos-text-muted) !important;
     border-radius: 0 !important;
     border: none !important;
     box-shadow: none !important;
     font-size: 13px !important;
+    overflow: visible !important;
+    position: relative !important;
+}
+
+.indexos-dialog .builder-help-wrap,
+.indexos-management-panel .builder-help-wrap {
+    position: relative !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin-left: 1px !important;
+}
+
+.indexos-dialog .builder-help-btn,
+.indexos-management-panel .builder-help-btn {
+    position: relative !important;
+    flex-shrink: 0 !important;
+    width: 12px !important;
+    height: 12px !important;
+    padding: 0 !important;
+    border: none !important;
+    background: transparent !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    color: var(--indexos-text-muted) !important;
+    opacity: 0.85 !important;
+    cursor: pointer !important;
+    transition: opacity 0.15s ease, color 0.15s ease !important;
+}
+
+.indexos-dialog .builder-help-btn:hover,
+.indexos-management-panel .builder-help-btn:hover,
+.indexos-dialog .builder-help-btn:focus-visible,
+.indexos-management-panel .builder-help-btn:focus-visible {
+    color: var(--indexos-accent-primary) !important;
+    opacity: 1 !important;
+    outline: none !important;
+}
+
+.indexos-dialog .builder-help-btn svg,
+.indexos-management-panel .builder-help-btn svg {
+    width: 12px !important;
+    height: 12px !important;
+    display: block !important;
+    pointer-events: none !important;
+}
+
+.indexos-dialog .builder-help-popover,
+.indexos-management-panel .builder-help-popover {
+    position: absolute !important;
+    right: -8px !important;
+    top: calc(100% + 10px) !important;
+    z-index: 9999 !important;
+    width: 260px !important;
+    max-width: calc(100vw - 32px) !important;
+    padding: 10px 12px !important;
+    border-radius: 8px !important;
+    background: rgba(15, 23, 42, 0.96) !important;
+    border: 1px solid rgba(148, 163, 184, 0.35) !important;
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.28), 0 0 0 1px rgba(96, 165, 250, 0.08) !important;
+    color: #e2e8f0 !important;
+    font-size: 12px !important;
+    line-height: 1.5 !important;
+    white-space: pre-line !important;
+    text-align: left !important;
+    overflow: visible !important;
+}
+
+.indexos-dialog .builder-help-popover::before,
+.indexos-management-panel .builder-help-popover::before {
+    content: "" !important;
+    position: absolute !important;
+    top: -6px !important;
+    right: 18px !important;
+    width: 10px !important;
+    height: 10px !important;
+    background: rgba(15, 23, 42, 0.96) !important;
+    border-left: 1px solid rgba(148, 163, 184, 0.35) !important;
+    border-top: 1px solid rgba(148, 163, 184, 0.35) !important;
+    transform: rotate(45deg) !important;
+}
+
+/* 目录页签位于 tab 栏最左侧，popover 需向右展开，避免超出弹窗左边界被裁剪 */
+.indexos-dialog .builder-help-popover--index,
+.indexos-management-panel .builder-help-popover--index {
+    right: auto !important;
+    left: -8px !important;
+}
+
+.indexos-dialog .builder-help-popover--index::before,
+.indexos-management-panel .builder-help-popover--index::before {
+    right: auto !important;
+    left: 18px !important;
+}
+
+.indexos-dialog .builder-help-popover__title,
+.indexos-management-panel .builder-help-popover__title {
+    margin-bottom: 6px !important;
+    font-weight: 700 !important;
+    color: #f8fafc !important;
+    letter-spacing: 0.02em !important;
+    text-align: center !important;
+}
+
+.indexos-dialog .builder-help-popover__content,
+.indexos-management-panel .builder-help-popover__content {
+    color: #dfe7f4 !important;
+    white-space: pre-line !important;
+    text-align: left !important;
 }
 
 .indexos-dialog .layout-tab-bar .item.item--focus,
@@ -248,11 +375,18 @@
 /* ─── 设置面板 (#index-settings & .config__panel) 全面防透色控制 ─── */
 .indexos-dialog #index-settings,
 .indexos-dialog .config__panel,
-.indexos-dialog .config__panel > div,
+.indexos-dialog .config__panel > div:not(.layout-tab-bar),
 .indexos-dialog .config__tab {
     background: var(--indexos-bg-base) !important;
     color: var(--indexos-text-main) !important;
     overflow-x: hidden !important; 
+}
+
+/* 帮助小问号 Popover：确保 tab 栏保持 overflow visible，避免弹出层被裁剪遮挡 */
+.indexos-dialog .layout-tab-bar,
+.indexos-management-panel .layout-tab-bar {
+    overflow: visible !important;
+    overflow-x: visible !important;
 }
 
 /* 数据库与命令面板防止主窗口溢出 */

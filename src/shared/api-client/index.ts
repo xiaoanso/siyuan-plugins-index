@@ -23,7 +23,8 @@ export class BlockService {
         existingBlockInfo?: { id: string, type: string, parent_id: string }
     ) {
         const attrs = { [attrName]: JSON.stringify(attrValue) };
-
+        // Superblock Card: bind custom-index-create on the Index Root Container (sb), not an inner list.
+        const bindAttrToRoot = type === "index" && attrValue?.layoutType === "superblock-card";
 
         try {
             // 1. Check for existing block
@@ -83,15 +84,15 @@ export class BlockService {
                 let opId = result.data[0].doOperations[0].id;
                 let attrTargetId = opId;
 
-                // If the returned block is a wrapper (Blockquote for outline, Super Block for index with col>1),
-                // find the inner List block to bind the attribute to
-                if (attrName !== "custom-tree-create") {
+                // If the returned block is a wrapper (Blockquote for outline, Super Block for index),
+                // find the inner List block to bind the attribute to — except Superblock Card root.
+                if (attrName !== "custom-tree-create" && !bindAttrToRoot) {
                     // Check what type of block we got
                     let needsSearch = false;
                     if (type == "outline") {
                         needsSearch = true;
                     } else {
-                        // For index: check if the block is a super block (col > 1 case)
+                        // For index: check if the block is a super block (list wrapped in sb)
                         let typeRs = await client.sql({
                             stmt: `SELECT type FROM blocks WHERE id = '${opId}' LIMIT 1`
                         });
@@ -135,7 +136,8 @@ export class BlockService {
 
 
                 // Fix: If attr is on a List inside a wrapper, update the wrapper instead
-                // Outline uses blockquote ('b'), Index with col>1 uses super block ('sb')
+                // Outline uses blockquote ('b'), Index list inside a super block uses ('sb')
+                // Superblock Card keeps attr on the root sb — update that sb directly.
                 if (currentType === 'l') {
                     let parentRs = await client.sql({ stmt: `SELECT id, type FROM blocks WHERE id = '${parentId}'` });
                     const parentType = parentRs.data?.[0]?.type;
@@ -151,9 +153,20 @@ export class BlockService {
                     id: updateTargetId
                 });
 
-                // Re-bind attributes to the inner list block after updating wrapper
+                // Re-bind attributes after update
                 let attrTargetId = updateTargetId;
-                if (updateTargetId !== currentId && attrName !== "custom-tree-create") {
+                if (bindAttrToRoot) {
+                    // Prefer the updated block if it is (or became) a super block
+                    let typeRs = await client.sql({
+                        stmt: `SELECT type FROM blocks WHERE id = '${updateTargetId}' LIMIT 1`
+                    });
+                    if (typeRs.data?.[0]?.type === 'sb') {
+                        attrTargetId = updateTargetId;
+                    } else {
+                        // Migration from list → card: attr may still sit on a list; keep update target
+                        attrTargetId = updateTargetId;
+                    }
+                } else if (updateTargetId !== currentId && attrName !== "custom-tree-create") {
                     // We updated a wrapper (blockquote/super block), need to find the new inner list
 
                     let foundNew = false;

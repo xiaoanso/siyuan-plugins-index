@@ -19,6 +19,7 @@ class={tabbarfocus === "builder"
         settingKey="builderAutoUpdate"
         settingValue={settingsStrings.builderAutoUpdate}
     />
+
     <div class="fn__hr"></div>
     <div style="padding: 10px; color: var(--b3-theme-on-surface-light); line-height: 1.6; font-size: 0.9em;">
         {i18n.settingsTab.items.builderDesc}

@@ -6,9 +6,9 @@ export class SettingsProperty {
     depth: number;
     listType: string;
     linkType: string;
+    layoutType: string;
     builderAutoUpdate: boolean;
     autoUpdate: boolean;
-    col: number;
     fold: number;
     outlineAutoUpdate: boolean;
     outlineType: string;
@@ -27,9 +27,9 @@ export class SettingsProperty {
         this.depth = 0;
         this.listType = "unordered";
         this.linkType = "link";
+        this.layoutType = "list";
         this.builderAutoUpdate = true;
         this.autoUpdate = true;
-        this.col = 1;
         this.fold = 0;
         this.outlineAutoUpdate = true;
         this.outlineType = "link";
@@ -46,18 +46,22 @@ export class SettingsProperty {
     }
 
     getAll() {
-        this.depth = settings.get("depth");
+        const toInt = (v: any, fallback: number) => {
+            const n = Number(v);
+            return Number.isFinite(n) ? n : fallback;
+        };
+        this.depth = toInt(settings.get("depth"), 0);
         this.listType = settings.get("listType");
         this.linkType = settings.get("linkType");
+        this.layoutType = settings.get("layoutType") ?? "list";
         this.builderAutoUpdate = settings.get("builderAutoUpdate");
         this.autoUpdate = settings.get("autoUpdate");
-        this.col = settings.get("col");
-        this.fold = settings.get("fold");
+        this.fold = toInt(settings.get("fold"), 0);
         this.outlineAutoUpdate = settings.get("outlineAutoUpdate");
         this.outlineType = settings.get("outlineType");
         this.listTypeOutline = settings.get("listTypeOutline");
 
-        this.depthNotebook = settings.get("depthNotebook") ?? 3;
+        this.depthNotebook = toInt(settings.get("depthNotebook"), 3);
         this.listTypeNotebook = settings.get("listTypeNotebook") ?? "unordered";
         this.linkTypeNotebook = settings.get("linkTypeNotebook") ?? "link";
         this.iconNotebook = settings.get("iconNotebook") ?? true;
@@ -89,6 +93,7 @@ class Settings {
             if (data.linkTypeNotebook === "ref") { data.linkTypeNotebook = "link"; needsSave = true; }
             if (data.useDynamicAnchor !== undefined) { delete data.useDynamicAnchor; needsSave = true; }
             if (data.useDynamicAnchorOutline !== undefined) { delete data.useDynamicAnchorOutline; needsSave = true; }
+            if (data.col !== undefined) { delete data.col; needsSave = true; }
             if (needsSave) {
                 console.log("[Settings] Migrated old config values to new format");
                 await this.save();
@@ -126,12 +131,17 @@ class Settings {
         if (linkType === "embed") linkType = "reference";
         if (localData.useDynamicAnchor === true && linkType !== "dynamic-ref") linkType = "dynamic-ref";
 
+        const toInt = (v: any, fallback: number) => {
+            const n = Number(v);
+            return Number.isFinite(n) ? n : fallback;
+        };
+
         const merged = {
-            depth: localData.depth ?? global.depth ?? def.depth,
+            depth: toInt(localData.depth ?? global.depth ?? def.depth, def.depth),
             listType: localData.listType ?? global.listType ?? def.listType,
             linkType: linkType,
-            fold: localData.fold ?? global.fold ?? def.fold,
-            col: localData.col ?? global.col ?? def.col,
+            layoutType: localData.layoutType ?? global.layoutType ?? def.layoutType,
+            fold: toInt(localData.fold ?? global.fold ?? def.fold, def.fold),
             icon: localData.icon ?? global.icon ?? def.icon,
             autoUpdate: localData.autoUpdate ?? global.autoUpdate ?? def.autoUpdate,
         };
@@ -139,7 +149,6 @@ class Settings {
         if (linkType === "tree") {
             merged.depth = 0;
             merged.fold = 0;
-            merged.col = 1;
             merged.icon = true;
         }
 

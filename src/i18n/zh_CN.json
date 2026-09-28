@@ -7,7 +7,7 @@
   "addTopBarIcon": "插入目录",
   "indexSettings": "目录",
   "outlineSettings": "大纲",
-  "builderSettings": "构建器 (测试)",
+  "builderSettings": "构建器",
   "dataSettings": "数据库（测试）",
   "cancel": "取消",
   "confirm": "确定",
@@ -33,6 +33,14 @@
         "content": "选择笔记本以生成目录索引",
         "dialogtitle": "生成笔记本目录",
         "insert": "插入"
+      },
+      "layoutType": {
+        "title": "布局样式",
+        "content": "选择生成目录的整体布局",
+        "options": {
+          "list": "列表",
+          "superblock-card": "超级块卡片"
+        }
       },
       "listType": {
         "title": "列表类型",
@@ -67,13 +75,6 @@
         "content": "默认折叠的层级深度",
         "min": 0,
         "max": 10,
-        "step": 1
-      },
-      "col": {
-        "title": "分栏数量",
-        "content": "目录显示的分栏数列数",
-        "min": 1,
-        "max": 5,
         "step": 1
       },
 
@@ -119,16 +120,53 @@
         "content": "开启命令管理，supertag，数据库管理等功能"
       },
 
-      "builderDesc": "📄 跳转子文档 · ➖ 跳转标题行"
+      "builderDesc": "📄 图标跳转子文档 · 标题文字跳转标题行"
     }
   },
   "builderMenu": {
     "buildDoc": "👈 构建子文档",
     "buildHeading": "👇 构建标题行",
+    "buildTooltip": "将列表项同步到独立文档或标题行",
+    "helpTitle": "构造器使用帮助",
+    "helpStep1": "1. 创建列表块",
+    "helpStep1Desc": "在思源笔记中创建一个列表块",
+    "helpStep2": "2. 选中列表",
+    "helpStep2Desc": "确保是顶层列表（不是嵌入在文档中的列表）",
+    "helpStep3": "3. 右键菜单",
+    "helpStep3Desc": "右键点击 → 选择「构建子文档」或「构建标题行」",
+    "helpStep4": "4. 自动更新（可选）",
+    "helpStep4Desc": "添加属性 custom-tree-create 启用自动同步",
+    "helpListExample": "5. 创建列表块例子：",
+    "helpListExampleContent": "- 第一章\n　- 1.1 节\n　- 1.2 节\n- 第二章\n　- 2.1 节",
+    "helpNote": "提示：可配合属性视图使用，自动继承图标、封面和模板",
     "syncSuccess": "✅ 同步完成",
     "syncPartial": "⚠️ 部分条目因格式复杂未更新文本 (x{n})，仅更新了图标",
     "syncError": "同步失败: {error}",
     "transformFail": "转换失败"
+  },
+  "indexMenu": {
+    "helpTitle": "目录生成帮助",
+    "helpStep1": "1. 打开文档",
+    "helpStep1Desc": "打开需要生成目录的顶层文档",
+    "helpStep2": "2. 触发生成",
+    "helpStep2Desc": "点击顶部栏「插入目录」按钮，输入 /插入文档目录，或按快捷键 ⌥⌘I",
+    "helpStep3": "3. 完成",
+    "helpStep3Desc": "自动扫描子文档并生成目录列表",
+    "helpStep4": "4. 自动更新（可选）",
+    "helpStep4Desc": "目录块添加属性 custom-index-create 启用自动同步",
+    "helpNote": "提示：在设置中可配置布局、列表类型、链接方式、图标、深度等"
+  },
+  "outlineMenu": {
+    "helpTitle": "大纲生成帮助",
+    "helpStep1": "1. 打开文档",
+    "helpStep1Desc": "打开需要生成大纲的文档",
+    "helpStep2": "2. 触发生成",
+    "helpStep2Desc": "右键顶部栏菜单选择「插入大纲」，输入 /插入文档大纲，或按快捷键 ⌥⌘O",
+    "helpStep3": "3. 完成",
+    "helpStep3Desc": "自动扫描文档内标题行并生成大纲列表",
+    "helpStep4": "4. 自动更新（可选）",
+    "helpStep4Desc": "大纲块添加属性 custom-outline-create 启用自动同步",
+    "helpNote": "提示：在设置中可配置列表类型、链接方式、富文本同步等"
   },
   "dbConfig": {
     "dialogTitle": "数据库设置",

@@ -7,8 +7,9 @@ export interface RenderContext {
     linkType: string;
     iconEnabled: boolean;
     listType: "unordered" | "ordered";
-    col?: number; // For index column mode
     isOutline?: boolean; // For outline-specific behaviors
+    /** When true, render title/link without list markers (Superblock Card header). */
+    omitListMarker?: boolean;
 }
 
 export interface RenderItem {
@@ -28,7 +29,7 @@ export interface MOCStrategy {
  */
 export class LinkStrategy implements MOCStrategy {
     render(item: RenderItem, context: RenderContext, indent: string): string {
-        const marker = context.listType === "unordered" ? "* " : "1. ";
+        const marker = context.omitListMarker ? "" : (context.listType === "unordered" ? "* " : "1. ");
         const ialStr = item.ial ? `\n${indent}   {: ${item.ial}}` : "";
 
         // If icon is enabled and NOT outline/tree, icon is a prefix, title is the link
@@ -52,7 +53,7 @@ export class LinkStrategy implements MOCStrategy {
  */
 export class RefStrategy implements MOCStrategy {
     render(item: RenderItem, context: RenderContext, indent: string): string {
-        const marker = context.listType === "unordered" ? "* " : "1. ";
+        const marker = context.omitListMarker ? "" : (context.listType === "unordered" ? "* " : "1. ");
         const ialStr = item.ial ? `\n${indent}   {: ${item.ial}}` : "";
 
         // Index mode with icons: Icon as prefix, title as block ref
@@ -77,7 +78,7 @@ export class RefStrategy implements MOCStrategy {
  */
 export class DynamicRefStrategy implements MOCStrategy {
     render(item: RenderItem, context: RenderContext, indent: string): string {
-        const marker = context.listType === "unordered" ? "* " : "1. ";
+        const marker = context.omitListMarker ? "" : (context.listType === "unordered" ? "* " : "1. ");
         const span = `<span data-type="block-ref" data-id="${item.id}" data-subtype="d">${item.text}</span>`;
         const ialStr = item.ial ? `\n${indent}   {: ${item.ial}}` : "";
 

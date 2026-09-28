@@ -15,7 +15,7 @@ Left-click the plugin icon to insert an index list into the current document; ri
 How to enable: Go to Plugin Settings -> Database -> Check **Developer Mode**. Once enabled, press `Alt + Click Search Icon` or shortcut `⌥⌘S` to open the console palette:
 
 - **`/Insert Command Button`**: Type `/Insert Command Button` (or `/插入命令按钮`) in the editor to quickly insert an interactive command button.
-- **Database & SQL Management**: Centrally manage Attribute View databases across the workspace, and use the [SQL Console for real-time querying & data manipulation](https://github.com/Szerelem0617/siyuan-plugins-index/blob/main/docs/guide-sqlite.md).
+- **Database & SQL Management**: Centrally manage Attribute View databases across the workspace, and use the [SQL Console for real-time querying & data manipulation](https://github.com/Szerelem0617/siyuan-plugins-index/blob/main/docs/SQLite使用指南.md).
 - **Commands & Supertag Binding**: Click "Instantiate Database" in the console palette to bind commands with specific Supertags and unlock advanced configurations.
 - Experimental features may contain breaking changes before reaching the v2.0.0 stable release. Please use with caution in production environments.
 
@@ -31,4 +31,4 @@ If you find this plugin helpful, consider supporting my work:
 
   <img src="https://raw.githubusercontent.com/Szerelem0617/siyuan-plugins-index/main/asset/qr.jpg" width="200" />
 
-# [Acknowledgments](https://github.com/Szerelem0617/siyuan-plugins-index/blob/main/docs/acknowledgments.md)
+# [Acknowledgments](https://github.com/Szerelem0617/siyuan-plugins-index/blob/main/docs/致谢.md)

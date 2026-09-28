@@ -1,9 +1,39 @@
 import { client } from "../../shared/api-client";
-import { IBlockProcessor, ATTR_INDEX, ATTR_OUTLINE } from "./processor";
+import { IBlockProcessor, ATTR_INDEX, ATTR_OUTLINE, ACTION_PUSH_TO_BOTTOM, ACTION_PUSH_TO_DOC } from "./processor";
 import { ATTR_LINKED_AV, ATTR_LINKED_AV_BLOCK } from "../../shared/constants";
 import { loadDbConfig } from "../av/av-setting/db-config";
 import { buildAvHierarchy, getColIDMap } from "../../shared/utils/av-utils";
 
+/**
+ * 构建锁：防止同一列表块的并发构建/自动更新导致重复创建子文档。
+ * 以 sourceBlockId 为键，串行化同一列表的构建任务。
+ */
+const buildLocks = new Map<string, Promise<void>>();
+
+/**
+ * 以列表块 ID 为粒度串行执行构建任务
+ * @param sourceBlockId - 顶层列表块 ID
+ * @param task - 构建任务
+ */
+export async function runWithBuildLock(sourceBlockId: string, task: () => Promise<void>) {
+    const prev = buildLocks.get(sourceBlockId) || Promise.resolve();
+    let nextRef: Promise<void>;
+    const next = prev.then(() => task()).finally(() => {
+        // 仅当队列尾仍是本次 promise 时才清理，避免误删后续排队任务
+        if (buildLocks.get(sourceBlockId) === nextRef) {
+            buildLocks.delete(sourceBlockId);
+        }
+    });
+    nextRef = next;
+    buildLocks.set(sourceBlockId, nextRef);
+    await nextRef;
+}
+
+/**
+ * 文档排序辅助函数
+ * @param notebook - 笔记本 ID
+ * @param paths - 文档路径数组
+ */
 async function changeSort(notebook: string, paths: string[]) {
     try {
         await fetch("/api/filetree/changeSort", {
@@ -16,14 +46,44 @@ async function changeSort(notebook: string, paths: string[]) {
     }
 }
 
+/**
+ * ListProcessor - 列表处理器
+ * 
+ * Builder 核心处理器，负责递归处理列表块并同步到目标文档。
+ * 支持两种构建模式：
+ * - PUSH_TO_DOC: 推送到独立文档
+ * - PUSH_TO_BOTTOM: 推送到文档底部标题
+ * 
+ * @example
+ * ```typescript
+ * const processor = new ListProcessor();
+ * await processor.processRecursive(blockId, "NodeListItem", "PUSH_TO_DOC");
+ * if (processor.errors.length > 0) {
+ *     console.error("Build errors:", processor.errors);
+ * }
+ * ```
+ */
 export class ListProcessor {
+    /** 错误信息收集 */
     errors: string[] = [];
+    /** 底层块处理器实例 */
     ibp: IBlockProcessor;
 
+    /**
+     * 创建列表处理器实例
+     */
     constructor() {
         this.ibp = new IBlockProcessor(this.errors);
     }
 
+    /**
+     * 递归处理列表块
+     * @param blockId - 当前处理的块 ID
+     * @param type - 块类型 ("NodeListItem" | "i" | "NodeList" | "l")
+     * @param actionType - 构建动作类型
+     * @param ctx - 处理上下文（可选）
+     * @returns 处理结果
+     */
     async processRecursive(blockId: string, type: string, actionType: string, ctx: any = null) {
         if (!ctx) {
             ctx = { previousId: null, parentId: null, level: 1 };
@@ -38,9 +98,9 @@ export class ListProcessor {
             const childCtx = {
                 ...ctx,
                 previousId: ctx.previousId,
-                parentId: (actionType === "PUSH_TO_DOC" || actionType === "PUSH_COMBINED") ? resultId : ctx.parentId,
+                parentId: (actionType === "PUSH_TO_DOC") ? resultId : ctx.parentId,
                 level: ctx.level + 1,
-                parentInfo: ((actionType === "PUSH_TO_DOC" || actionType === "PUSH_COMBINED") && result && typeof result === 'object') ? result : ctx.parentInfo
+                parentInfo: ((actionType === "PUSH_TO_DOC") && result && typeof result === 'object') ? result : ctx.parentInfo
             };
 
             let childrenRes = await client.sql({
@@ -163,7 +223,7 @@ export class ListProcessor {
 
             let needsUpdate = false;
 
-            if (actionType === "PUSH_TO_DOC" || actionType === "PUSH_COMBINED") {
+            if (actionType === "PUSH_TO_DOC") {
                 if (!docTarget) {
                     console.log(`[Builder] Item ${child.id} has no target doc, PUSH needed.`);
                     needsUpdate = true;
@@ -205,7 +265,7 @@ export class ListProcessor {
                 }
             }
 
-            if (actionType === "PUSH_TO_BOTTOM" || actionType === "PUSH_COMBINED") {
+            if (actionType === "PUSH_TO_BOTTOM") {
                 if (!headingTarget) needsUpdate = true;
                 else if (!headingTarget.content.includes(core.syncText)) needsUpdate = true;
             }
@@ -230,9 +290,9 @@ export class ListProcessor {
                 const childCtx = {
                     ...ctx,
                     previousId: ctx.previousId,
-                    parentId: (actionType === "PUSH_TO_DOC" || actionType === "PUSH_COMBINED") ? resultId : ctx.parentId,
+                    parentId: (actionType === "PUSH_TO_DOC") ? resultId : ctx.parentId,
                     level: ctx.level + 1,
-                    parentInfo: ((actionType === "PUSH_TO_DOC" || actionType === "PUSH_COMBINED") && result && typeof result === 'object') ? result : ctx.parentInfo,
+                    parentInfo: ((actionType === "PUSH_TO_DOC") && result && typeof result === 'object') ? result : ctx.parentInfo,
                     inheritedAttrs: currentItemResolved // Propagate inheritance to children even if skip update
                 };
 
@@ -247,7 +307,7 @@ export class ListProcessor {
                 }
             }
 
-            if ((actionType === "PUSH_TO_DOC" || actionType === "PUSH_COMBINED") && result && typeof result === 'object' && result.path) {
+            if (actionType === "PUSH_TO_DOC" && result && typeof result === 'object' && result.path) {
                 docPaths.push(result.path);
                 notebookId = result.notebook;
             }

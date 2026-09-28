@@ -5,13 +5,36 @@ import { ATTR_LINKED_AV, ATTR_ITEM_ID } from "../../shared/constants";
 import { getColIDMap } from "../../shared/utils/av-utils";
 
 
-// Constants
+/**
+ * Builder 构造器常量定义
+ * @module builder/processor
+ */
+
+// 块属性常量
+/** 关联子文档 ID 的属性名 */
 export const ATTR_INDEX = "custom-index-subdoc-id";
+/** 关联标题块 ID 的属性名 */
 export const ATTR_OUTLINE = "custom-index-heading-id";
+/** 构建器托管标记：标记由构建器创建的文档/标题块，用于安全清理 */
+export const ATTR_BUILDER_MANAGED = "custom-builder-managed";
+/** 列表项分隔符字符 */
 export const SEP_CHAR = "➖";
+/** 默认文档图标 */
 export const DEFAULT_ICON = "📄";
 
-// API Helper
+// Action Types
+/** 构建类型：将列表项推送到独立文档 */
+export const ACTION_PUSH_TO_DOC = "PUSH_TO_DOC";
+/** 构建类型：将列表项推送到文档底部标题 */
+export const ACTION_PUSH_TO_BOTTOM = "PUSH_TO_BOTTOM";
+
+/**
+ * 通用 POST 请求辅助函数
+ * @param url - API 端点路径
+ * @param data - 请求数据对象
+ * @returns API 响应数据
+ * @throws Error 当响应 code 不为 0 时抛出
+ */
 async function post(url: string, data: any) {
     const response = await fetch(url, {
         method: "POST",
@@ -23,10 +46,30 @@ async function post(url: string, data: any) {
     return res.data;
 }
 
+/**
+ * IBlockProcessor - 列表块处理器
+ * 
+ * 负责将列表项同步到目标文档或标题块，支持：
+ * - 增量更新（仅同步变更的项目）
+ * - 属性继承（从属性视图继承图标、封面、模板）
+ * - 样式保留（保留块的原始样式属性）
+ * 
+ * @example
+ * ```typescript
+ * const processor = new IBlockProcessor([]);
+ * await processor.processSingleItem(listItemId, "PUSH_TO_DOC", ctx);
+ * ```
+ */
 export class IBlockProcessor {
+    /** 错误信息收集数组 */
     errors: string[];
+    /** 属性视图列信息缓存 */
     avCache: Map<string, any> = new Map();
 
+    /**
+     * 创建列表块处理器实例
+     * @param errors - 错误信息收集数组引用
+     */
     constructor(errors: string[]) {
         this.errors = errors;
     }
@@ -111,11 +154,6 @@ export class IBlockProcessor {
             case "PUSH_TO_BOTTOM":
                 result = await this.handlePushToBottom(core, containerAttrs, ctx);
                 break;
-            case "PUSH_COMBINED":
-                const docResult = await this.handlePushToDoc(core, containerAttrs, ctx);
-                const headingId = await this.handlePushToBottom(core, containerAttrs, ctx);
-                result = { ...docResult, id: headingId };
-                break;
         }
         return result || ctx.previousId;
     }
@@ -152,12 +190,12 @@ export class IBlockProcessor {
             if (targetId) {
                 const promises = [];
                 promises.push(client.setBlockAttrs({ id: core.containerId, attrs: { [ATTR_OUTLINE]: targetId } }));
-                if (Object.keys(stylesToKeep).length > 0) promises.push(client.setBlockAttrs({ id: targetId, attrs: stylesToKeep }));
+                promises.push(client.setBlockAttrs({ id: targetId, attrs: { ...stylesToKeep, [ATTR_BUILDER_MANAGED]: "true" } }));
                 await Promise.all(promises);
             }
         } else {
             await client.updateBlock({ id: targetId, dataType: "markdown", data: titleContent });
-            if (Object.keys(stylesToKeep).length > 0) await client.setBlockAttrs({ id: targetId, attrs: stylesToKeep });
+            await client.setBlockAttrs({ id: targetId, attrs: { ...stylesToKeep, [ATTR_BUILDER_MANAGED]: "true" } });
         }
 
         const finalMd = await this.constructListItemMarkdown(containerAttrs, targetId, core.syncMd, undefined, core.currentIcon);
@@ -335,6 +373,7 @@ export class IBlockProcessor {
                     const existingDocAttrs: any = {};
                     existingDocAttrs.icon = targetIcon || "";
                     existingDocAttrs["title-img"] = targetImage || "";
+                    existingDocAttrs[ATTR_BUILDER_MANAGED] = "true"; // 补打托管标记
 
                     const overrides = await applyInherited(docId, existingDocAttrs);
                     if (overrides.icon !== undefined) targetIcon = overrides.icon;
@@ -383,6 +422,8 @@ export class IBlockProcessor {
                 if (pRes) physicalPath = pRes.path;
             } catch (e) { }
             await client.setBlockAttrs({ id: core.containerId, attrs: { [ATTR_INDEX]: newId } });
+            // 托管标记：标记该文档由构建器创建，便于安全清理
+            await client.setBlockAttrs({ id: newId, attrs: { [ATTR_BUILDER_MANAGED]: "true" } });
 
             const existingDocAttrs: any = {};
             existingDocAttrs.icon = targetIcon || "";
@@ -419,13 +460,11 @@ export class IBlockProcessor {
         }
         
         if (headingId) {
-            parts.push(`[${SEP_CHAR}](siyuan://blocks/${headingId})`);
+            // 标题行跳转：正文文字本身作为链接，移除 ➖ 小竖线分隔符
+            parts.push(`[${syncText.trim()}](siyuan://blocks/${headingId})`);
         } else {
-            parts.push(SEP_CHAR);
+            parts.push(syncText.trim());
         }
-        
-        // syncText is already scrubbed in parseItemContent
-        parts.push(syncText.trim());
         return parts.join(" ");
     }
 
@@ -463,8 +502,13 @@ export class IBlockProcessor {
         const docMatch = tempMd.match(docLinkRegex);
         if (docMatch) {
             const anchor = docMatch[1];
-            if (anchor !== SEP_CHAR) {
-                if (anchor && anchor.length < 8) currentIcon = anchor;
+            // 仅当 anchor 是图标样式时才视为文档图标链接（避免误删新格式标题链接）
+            const isIconAnchor = anchor !== SEP_CHAR && (
+                /^(\p{Extended_Pictographic}\uFE0F?|\p{Emoji_Presentation}|:[^:]+:|\p{So})$/u.test(anchor)
+                || (anchor.length <= 2 && !/[\u4e00-\u9fff]/.test(anchor))
+            );
+            if (isIconAnchor) {
+                currentIcon = anchor;
                 tempMd = tempMd.replace(docLinkRegex, "");
             }
         } else {
@@ -485,6 +529,13 @@ export class IBlockProcessor {
                 if (emojiTest.test(prefix)) currentIcon = prefix;
             }
             tempMd = tempMd.replace(sepLinkRegex, "");
+        }
+        // 新格式：标题行正文本身作为跳转链接 [正文](siyuan://blocks/headingId)，剥离为纯文本
+        const headingLinkRegex = /^\[(.*?)\]\(siyuan:\/\/blocks\/[a-zA-Z0-9-]+\)\s*/;
+        const headingMatch = tempMd.match(headingLinkRegex);
+        if (headingMatch) {
+            hasSeparator = true;
+            tempMd = tempMd.replace(headingLinkRegex, "$1");
         }
         let syncMd = tempMd.trim();
         // Derive syncText from SQL `content` field.
@@ -525,5 +576,99 @@ export class IBlockProcessor {
             if (whitelist.has(key)) validAttrs[key] = val;
         }
         return validAttrs;
+    }
+
+    /**
+     * 清理残留的构建器目标（孤儿清理）
+     * 
+     * 扫描列表块，找出列表中已不存在的列表项所关联的目标文档/标题块，并回收：
+     * - 子文档：仅当带有 ATTR_BUILDER_MANAGED 标记时才移入回收站 (removeDoc)
+     * - 标题块：仅当标题下没有子块（光杆保护）且带标记时才 deleteBlock
+     * 
+     * @param listBlockId - 顶层列表块 ID
+     */
+    async cleanupOrphans(listBlockId: string) {
+        try {
+            // 1. 收集顶层列表块下的所有列表项 ID 及其 IAL 中记录的目标 ID
+            const itemRes = await client.sql({
+                stmt: `SELECT id, ial FROM blocks WHERE type = 'i' AND parent_id = '${listBlockId}'`
+            });
+            // 空列表保护：若列表块已无任何列表项，不清除任何内容（避免误判）
+            if (!itemRes.data || itemRes.data.length === 0) return;
+
+            const targetDocIds = new Set<string>();
+            const targetHeadingIds = new Set<string>();
+
+            (itemRes.data).forEach((it: any) => {
+                const ia = it.ial || "";
+                const dM = ia.match(new RegExp(`${ATTR_INDEX}="([^"]+)"`));
+                if (dM) targetDocIds.add(dM[1]);
+                const hM = ia.match(new RegExp(`${ATTR_OUTLINE}="([^"]+)"`));
+                if (hM) targetHeadingIds.add(hM[1]);
+            });
+
+            // 1.5 获取 source 文档作用域，将清理范围从全库收窄到当前源文档，杜绝跨文档误删
+            const listInfoRes = await client.sql({
+                stmt: `SELECT root_id FROM blocks WHERE id = '${listBlockId}' LIMIT 1`
+            });
+            const rootId = listInfoRes.data?.[0]?.root_id;
+            if (!rootId) return;
+
+            let srcBox = "";
+            let srcPathPrefix = "/";
+            try {
+                const srcDocRes = await client.sql({
+                    stmt: `SELECT box, path FROM blocks WHERE id = '${rootId}' LIMIT 1`
+                });
+                const srcDoc = srcDocRes.data?.[0];
+                srcBox = srcDoc?.box || "";
+                const srcPath = srcDoc?.path || "";
+                if (srcPath) {
+                    const idx = srcPath.lastIndexOf("/");
+                    srcPathPrefix = idx > 0 ? srcPath.substring(0, idx + 1) : "/";
+                }
+            } catch (e) {
+                console.error("[Builder] Failed to fetch source doc scope", e);
+            }
+
+            // 2. 清理子文档：仅当前笔记本、当前源文档目录树下的托管文档，且未被当前列表项引用
+            if (srcBox) {
+                const managedDocsRes = await client.sql({
+                    stmt: `SELECT id, box, path FROM blocks WHERE type = 'd' AND box = '${srcBox}' AND path LIKE '${srcPathPrefix}%' AND ial LIKE '%${ATTR_BUILDER_MANAGED}="true"%'`
+                });
+                for (const doc of (managedDocsRes.data || [])) {
+                    if (targetDocIds.has(doc.id)) continue; // 仍被引用，跳过
+                    try {
+                        await post("/api/filetree/removeDoc", { notebook: doc.box, path: doc.path });
+                        console.log("[Builder] Cleanup orphan doc", doc.id);
+                    } catch (e) {
+                        console.error("[Builder] Failed to cleanup orphan doc", doc.id, e);
+                    }
+                }
+            }
+
+            // 3. 清理标题块：仅当前源文档 root 内（标题块必然属于源文档）的托管块，且未被当前列表项引用
+            const managedHeadingsRes = await client.sql({
+                stmt: `SELECT id FROM blocks WHERE root_id = '${rootId}' AND ial LIKE '%${ATTR_BUILDER_MANAGED}="true"%' AND type IN ('h','h1','h2','h3','h4','h5','h6')`
+            });
+            for (const h of (managedHeadingsRes.data || [])) {
+                if (targetHeadingIds.has(h.id)) continue; // 仍被引用，跳过
+
+                // 光杆保护：仅当标题下方没有子块时才删除
+                const childRes = await client.sql({
+                    stmt: `SELECT id FROM blocks WHERE parent_id = '${h.id}' LIMIT 1`
+                });
+                if (!childRes.data || childRes.data.length === 0) {
+                    try {
+                        await client.deleteBlock({ id: h.id });
+                        console.log("[Builder] Cleanup orphan heading", h.id);
+                    } catch (e) {
+                        console.error("[Builder] Failed to cleanup orphan heading", h.id, e);
+                    }
+                }
+            }
+        } catch (e) {
+            console.error("[Builder] cleanupOrphans failed", e);
+        }
     }
 }

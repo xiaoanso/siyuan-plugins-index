@@ -309,23 +309,25 @@
     <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--b3-border-color); margin-bottom: 12px; flex-shrink: 0; position: relative;">
         <div style="display: flex; gap: 4px; overflow-x: auto; flex: 1; padding-bottom: 2px;">
             {#each activeEventTypes as ev}
-                <div 
-                    class="b3-button {activeEvent === ev.id ? 'b3-button--primary' : 'b3-button--text'}" 
-                    style="font-size: 11px; padding: 4px 8px; border-radius: 4px 4px 0 0; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; white-space: nowrap; height: 26px;"
-                    on:click={() => activeEvent = ev.id}
-                >
-                    <span>{ev.label}</span>
+                <div style="display: inline-flex; align-items: stretch; height: 26px;">
+                    <button
+                        type="button"
+                        class="b3-button {activeEvent === ev.id ? 'b3-button--primary' : 'b3-button--text'}" 
+                        style="font-size: 11px; padding: 4px 8px; border-radius: 4px 0 0 0; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; white-space: nowrap; height: 26px;"
+                        on:click={() => activeEvent = ev.id}
+                    >
+                        {ev.label}
+                    </button>
                     {#if ev.id !== 'tag_created'}
-                        <!-- svelte-ignore a11y-click-events-have-key-events -->
-                        <!-- svelte-ignore a11y-no-static-element-interactions -->
-                        <span 
-                            class="index-tab-remove"
-                            style="font-size: 11px; line-height: 1; opacity: 0.7; padding: 1px 3px; border-radius: 50%; display: flex; align-items: center; justify-content: center;"
+                        <button
+                            type="button"
+                            class="b3-button {activeEvent === ev.id ? 'b3-button--primary' : 'b3-button--text'} index-tab-remove"
+                            style="font-size: 11px; line-height: 1; opacity: 0.7; padding: 4px 6px; border-radius: 0 4px 0 0; height: 26px;"
                             on:click={(e) => removeEvent(ev.id, e)}
                             title="移除此触发事件"
                         >
                             ✕
-                        </span>
+                        </button>
                     {/if}
                 </div>
             {/each}
@@ -368,8 +370,9 @@
     <!-- Active Tab Configuration Body -->
     <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; flex-shrink: 0; padding: 8px; border-radius: 4px; border: 1px solid var(--b3-border-color); background: var(--b3-theme-surface);">
         <div style="display: flex; flex-direction: column; gap: 4px;">
-            <label style="font-size: 11px; font-weight: bold; color: var(--b3-theme-on-surface-light);">触发条件 (Condition) - 可选</label>
+            <label for="conditional-trigger-condition" style="font-size: 11px; font-weight: bold; color: var(--b3-theme-on-surface-light);">触发条件 (Condition) - 可选</label>
             <input 
+                id="conditional-trigger-condition"
                 type="text" 
                 class="b3-text-field" 
                 style="font-size: 12px; padding: 4px 8px;" 

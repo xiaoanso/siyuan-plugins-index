@@ -11,9 +11,13 @@
   "author": "Szerelem0617",
   "license": "MIT",
   "scripts": {
-    "make-link": "node  --no-warnings ./scripts/make_dev_link.js",
     "dev": "vite build --watch",
     "build": "vite build",
+    "release": "node ./release.js",
+    "release:manual": "node ./release.js --mode=manual",
+    "release:patch": "node ./release.js --mode=patch",
+    "release:minor": "node ./release.js --mode=minor",
+    "release:major": "node ./release.js --mode=major",
     "update": "pnpm update -L"
   },
   "devDependencies": {

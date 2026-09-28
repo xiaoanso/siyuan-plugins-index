@@ -1,0 +1,135 @@
+/* src/ui/styles/card.css
+ * 目录超级块卡片：赛博光影工业卡 (Cyber Glow Industrial Card)
+ * 由 generator.ts 生成 CARD_IAL 时注入 custom-index="card" 属性，
+ * 此样式作用于文档正文中的超级块，自动适配浅/深主题 token。
+ */
+
+/* ═══ 卡片基础：赛博光影工业卡 ═══
+ * 注意：所有卡片样式必须限定在"单卡片超级块"范围内：
+ *   div[custom-index="card"][data-type="NodeSuperBlock"][data-sb-layout="row"]
+ * 与列表布局完全隔离：
+ *   - 列表外层若仍有历史超级块，可能是 data-sb-layout="col"（旧分栏容器）
+ *   - 列表本身是 NodeList / NodeListItem / NodeParagraph（无 custom-index="card"）
+ * 双层限定（custom-index=card + data-sb-layout=row）彻底避免误伤列表层级样式。
+ */
+.protyle-wysiwyg div[custom-index="card"][data-type="NodeSuperBlock"][data-sb-layout="row"] {
+    position: relative;
+    background: var(--indexos-bg-container) !important;
+    border: 1px solid var(--indexos-border-light) !important;
+    border-radius: 6px !important;
+    box-shadow: 0 1px 4px rgba(15, 23, 42, 0.04), 0 0 0 1px rgba(161, 196, 230, 0.08) !important;
+    padding: 8px 10px 10px !important;
+    margin-bottom: 10px !important;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+/* 顶部茵蒂克丝蓝渐变光带 */
+.protyle-wysiwyg div[custom-index="card"][data-type="NodeSuperBlock"][data-sb-layout="row"]::before {
+    content: "" !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    height: 2px !important;
+    border-radius: 6px 6px 0 0 !important;
+    background: linear-gradient(90deg, var(--indexos-index-blue, #A1C4E6) 0%, rgba(161, 196, 230, 0.35) 50%, transparent 100%) !important;
+    pointer-events: none !important;
+    transition: all 0.2s ease !important;
+}
+
+/* Hover：卡片上浮 + 光带增亮 + 冰蓝 glow */
+.protyle-wysiwyg div[custom-index="card"][data-type="NodeSuperBlock"][data-sb-layout="row"]:hover {
+    transform: translateY(-2px) !important;
+    border-color: var(--indexos-accent-primary) !important;
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.10), 0 0 12px var(--indexos-accent-glow, rgba(161, 196, 230, 0.45)) !important;
+}
+
+.protyle-wysiwyg div[custom-index="card"][data-type="NodeSuperBlock"][data-sb-layout="row"]:hover::before {
+    height: 3px !important;
+    background: linear-gradient(90deg, var(--indexos-accent-primary) 0%, var(--indexos-index-blue, #A1C4E6) 60%, transparent 100%) !important;
+}
+
+/* 封面图：圆角裁切，顶部光带下方无缝衔接（仅卡片顶部首张非 emoji 图片） */
+.protyle-wysiwyg div[custom-index="card"][data-type="NodeSuperBlock"][data-sb-layout="row"] img:not(.emoji) {
+    width: 100% !important;
+    max-height: 140px !important;
+    object-fit: cover !important;
+    display: block !important;
+    border-radius: 4px !important;
+    margin: 0 0 6px !important;
+}
+
+/* 卡片封面图：隐藏鼠标悬浮时图片中间的拖拽把手竖线（思源原生 .protyle-action__drag） */
+.protyle-wysiwyg div[custom-index="card"][data-type="NodeSuperBlock"][data-sb-layout="row"] .img .protyle-action__drag,
+.protyle-wysiwyg div[custom-index="card"][data-type="NodeSuperBlock"][data-sb-layout="row"] .img .protyle-action__drag::before,
+.protyle-wysiwyg div[custom-index="card"][data-type="NodeSuperBlock"][data-sb-layout="row"] .img .protyle-action__drag::after {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+}
+
+/* 卡片内标题行：主色强调 */
+.protyle-wysiwyg div[custom-index="card"][data-type="NodeSuperBlock"][data-sb-layout="row"] .h1,
+.protyle-wysiwyg div[custom-index="card"][data-type="NodeSuperBlock"][data-sb-layout="row"] .h2,
+.protyle-wysiwyg div[custom-index="card"][data-type="NodeSuperBlock"][data-sb-layout="row"] .h3,
+.protyle-wysiwyg div[custom-index="card"][data-type="NodeSuperBlock"][data-sb-layout="row"] .h4,
+.protyle-wysiwyg div[custom-index="card"][data-type="NodeSuperBlock"][data-sb-layout="row"] .h5,
+.protyle-wysiwyg div[custom-index="card"][data-type="NodeSuperBlock"][data-sb-layout="row"] .h6,
+.protyle-wysiwyg div[custom-index="card"][data-type="NodeSuperBlock"][data-sb-layout="row"] > div[data-type="NodeParagraph"]:first-of-type,
+.protyle-wysiwyg div[custom-index="card"][data-type="NodeSuperBlock"][data-sb-layout="row"] > div[data-type="NodeParagraph"]:nth-child(2) {
+    color: var(--indexos-accent-primary) !important;
+}
+
+/* 标题行内联 emoji 图标：保持行内小尺寸，不被封面图规则放大 */
+.protyle-wysiwyg div[custom-index="card"][data-type="NodeSuperBlock"][data-sb-layout="row"] .h1 img.emoji,
+.protyle-wysiwyg div[custom-index="card"][data-type="NodeSuperBlock"][data-sb-layout="row"] .h2 img.emoji,
+.protyle-wysiwyg div[custom-index="card"][data-type="NodeSuperBlock"][data-sb-layout="row"] .h3 img.emoji,
+.protyle-wysiwyg div[custom-index="card"][data-type="NodeSuperBlock"][data-sb-layout="row"] .h4 img.emoji,
+.protyle-wysiwyg div[custom-index="card"][data-type="NodeSuperBlock"][data-sb-layout="row"] .h5 img.emoji,
+.protyle-wysiwyg div[custom-index="card"][data-type="NodeSuperBlock"][data-sb-layout="row"] .h6 img.emoji,
+.protyle-wysiwyg div[custom-index="card"][data-type="NodeSuperBlock"][data-sb-layout="row"] > div[data-type="NodeParagraph"]:first-of-type img.emoji,
+.protyle-wysiwyg div[custom-index="card"][data-type="NodeSuperBlock"][data-sb-layout="row"] > div[data-type="NodeParagraph"]:nth-child(2) img.emoji {
+    width: 1.15em !important;
+    height: 1.15em !important;
+    max-width: none !important;
+    max-height: none !important;
+    object-fit: contain !important;
+    display: inline-block !important;
+    vertical-align: -0.22em !important;
+    margin: 0 0.1em 0 0 !important;
+    border-radius: 0 !important;
+}
+
+/* 摘要/子列表正文：次要文本色 */
+.protyle-wysiwyg div[custom-index="card"][data-type="NodeSuperBlock"][data-sb-layout="row"] > div[data-type="NodeParagraph"] {
+    color: var(--indexos-text-muted) !important;
+}
+
+/* ═══ 卡片看板容器：扁平栅栏（CSS Grid 自适应） ═══
+ * 所有卡片是 Index Root（row + custom-index="board"）的直接子块。
+ * 覆盖思源原生 row 超级块的 flex 横排，改为 auto-fill 栅栏：
+ * - 最小列宽 240px，编辑器变窄自动减列；极窄时 min(240px, 100%) 避免撑出横向滚动
+ * - align-items: stretch 让同一行卡片等高
+ * 间距由容器 gap 统一控制，卡片自身 margin-bottom 归零。
+ */
+.protyle-wysiwyg div[custom-index="board"][data-type="NodeSuperBlock"][data-sb-layout="row"] {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr)) !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+}
+
+.protyle-wysiwyg div[custom-index="board"][data-type="NodeSuperBlock"][data-sb-layout="row"] > [data-node-id] {
+    flex: unset !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    align-self: stretch !important;
+}
+
+.protyle-wysiwyg div[custom-index="board"] div[custom-index="card"][data-type="NodeSuperBlock"][data-sb-layout="row"] {
+    margin-bottom: 0 !important;
+    height: 100% !important;
+    box-sizing: border-box !important;
+}
+
